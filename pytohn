@@ -1,0 +1,73 @@
+#plotting:
+
+----
+sample = data_df.sample(n=8)
+fig,axx = plt.subplots(2,4, figsize=(20,10))
+for idd,boneage,place in zip(sample['id'],sample['boneage'],axx.flatten()):
+    place.imshow(imread(f"{train_dir}/{idd}"))
+    place.set_title(str(boneage)+' month')
+-----
+
+
+
+#model training:
+
+------
+from keras_preprocessing.image import ImageDataGenerator
+core_idg = ImageDataGenerator(samplewise_center=False, 
+                              samplewise_std_normalization=False, 
+                              horizontal_flip = True, 
+                              vertical_flip = True, 
+                              height_shift_range = 0.15, 
+                              width_shift_range = 0.15, 
+                              rotation_range = 5, 
+                              shear_range = 0.01,
+                              fill_mode = 'nearest',
+                              zoom_range=0.25,
+                             preprocessing_function = preprocess_input)
+------
+train_dg = core_dg.flow_from_dataframe(
+    train_df,
+    directory=train_dir,
+    x_col="id",
+    y_col="Zscore",
+    weight_col=None,
+    target_size=(256, 256),
+    color_mode="rgb",
+    classes=None,
+    class_mode="raw",
+    batch_size=32,
+    shuffle=True,
+    seed=None,
+    save_to_dir=None,
+    save_prefix="",
+    save_format="png",
+    subset=None,
+    interpolation="nearest",
+    validate_filenames=True,
+)
+-----
+model.compile(loss='mse', optimizer= 'adam', metrics=[MeanAbsoluteError()])
+-----
+import requests
+url = 'https://github.com/Fsunroo/RSNA-BoneAge/releases/download/v1.0/output.hdf5'
+r = requests.get(url)
+with open('RSNA_Xception_1.hdf5','wb') as f:
+    f.write(r.content)
+source_model = tf.keras.models.load_model('RSNA_Xception_1.hdf5')
+source_model.summary()
+-----
+model = Sequential()
+for layer in source_model.layers[:-1]: # go through until last layer
+    model.add(layer)
+model.add(Dense(8, activation='softmax',name='dense_2'))
+model.summary()
+------
+test_idg = ImageDataGenerator(preprocessing_function  = preprocess_input)
+test_gen = test_idg.flow_from_dataframe(test_db,
+                                       x_col = 'id',
+                                       directory = '/kaggle/input/rsna-bone-age/boneage-test-dataset/boneage-test-dataset',
+                                        class_mode = None
+                                       )
+------
+  
