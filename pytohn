@@ -72,4 +72,10 @@ test_gen = test_idg.flow_from_dataframe(test_db,
                                         class_mode = None
                                        )
 ------
-  
+
+
+model.save('nuclei_model.hdf5')
+from IPython.display import FileLink
+FileLink(r'model_2.hdf5')
+--
+<a href="./nuclei_model.hdf5"> Download File </a>
